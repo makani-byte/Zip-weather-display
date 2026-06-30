@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZIP Weather Display</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-wrapper" id="appWrapper">
+    <header class="app-header">
+      <h1 class="app-title">ZIP Weather</h1>
+      <p class="app-subtitle">Enter a U.S. ZIP code for current conditions</p>
+    </header>
+
+    <section class="search-section">
+      <form class="search-form" id="searchForm" novalidate>
+        <input
+          type="text"
+          id="zipInput"
+          class="zip-input"
+          placeholder="e.g. 90210"
+          maxlength="5"
+          inputmode="numeric"
+          pattern="\d{5}"
+          aria-label="Enter ZIP code"
+          autocomplete="off"
+        />
+        <button type="submit" class="search-btn" aria-label="Get weather">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </button>
+      </form>
+      <p class="error-msg" id="errorMsg" role="alert" aria-live="polite"></p>
+    </section>
+
+    <!-- Loading -->
+    <div class="loading" id="loading" hidden>
+      <div class="spinner"></div>
+      <p>Fetching weather&hellip;</p>
+    </div>
+
+    <!-- Weather Card (hidden until data loads) -->
+    <main class="weather-card" id="weatherCard" hidden>
+      <div class="weather-hero">
+        <div class="location-info">
+          <h2 class="city-name" id="cityName"></h2>
+          <p class="state-zip" id="stateZip"></p>
+        </div>
+        <div class="weather-icon-wrap">
+          <span class="weather-icon" id="weatherIcon" aria-hidden="true"></span>
+        </div>
+        <div class="temp-block">
+          <span class="temp-main" id="tempMain"></span>
+          <span class="condition-label" id="conditionLabel"></span>
+        </div>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-card">
+          <span class="detail-icon">🌡️</span>
+          <span class="detail-label">Feels Like</span>
+          <span class="detail-value" id="feelsLike"></span>
+        </div>
+        <div class="detail-card">
+          <span class="detail-icon">⬆️</span>
+          <span class="detail-label">Today's High</span>
+          <span class="detail-value" id="tempHigh"></span>
+        </div>
+        <div class="detail-card">
+          <span class="detail-icon">⬇️</span>
+          <span class="detail-label">Today's Low</span>
+          <span class="detail-value" id="tempLow"></span>
+        </div>
+        <div class="detail-card">
+          <span class="detail-icon">💧</span>
+          <span class="detail-label">Humidity</span>
+          <span class="detail-value" id="humidity"></span>
+        </div>
+        <div class="detail-card">
+          <span class="detail-icon">💨</span>
+          <span class="detail-label">Wind</span>
+          <span class="detail-value" id="wind"></span>
+        </div>
+        <div class="detail-card">
+          <span class="detail-icon">🌂</span>
+          <span class="detail-label">Precipitation</span>
+          <span class="detail-value" id="precipitation"></span>
+        </div>
+        <div class="detail-card">
+          <span class="detail-icon">🌅</span>
+          <span class="detail-label">Sunrise</span>
+          <span class="detail-value" id="sunrise"></span>
+        </div>
+        <div class="detail-card">
+          <span class="detail-icon">🌇</span>
+          <span class="detail-label">Sunset</span>
+          <span class="detail-value" id="sunset"></span>
+        </div>
+      </div>
+
+      <p class="last-updated" id="lastUpdated"></p>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
