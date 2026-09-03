@@ -3,107 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ZIP Code Weather</title>
+    <title>ZIP Weather</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🌤️ Weather Lookup</h1>
-            <p class="subtitle">Enter a U.S. ZIP code to get current weather</p>
-        </header>
+    <div class="page-shell">
+        <div class="bg-orb orb-one"></div>
+        <div class="bg-orb orb-two"></div>
 
-        <div class="search-section">
-            <div class="search-container">
-                <input 
-                    type="text" 
-                    id="zipInput" 
-                    placeholder="Enter ZIP code (e.g., 10001)" 
-                    maxlength="5"
-                    pattern="[0-9]{5}"
-                >
-                <button id="searchBtn">Search</button>
-            </div>
-            <div id="errorMessage" class="error-message hidden"></div>
-        </div>
-
-        <div id="loadingSpinner" class="loading-spinner hidden">
-            <div class="spinner"></div>
-            <p>Loading weather data...</p>
-        </div>
-
-        <div id="weatherDisplay" class="weather-display hidden">
-            <div class="location-header">
-                <h2 id="cityName"></h2>
-                <p id="lastUpdated" class="last-updated"></p>
-            </div>
-
-            <div class="weather-main">
-                <div class="weather-icon-container">
-                    <img id="weatherIcon" src="" alt="Weather icon">
-                    <p id="weatherCondition" class="weather-condition"></p>
+        <main class="container app-card">
+            <section class="hero-panel">
+                <div class="hero-copy">
+                    <span class="eyebrow">Forecast in seconds</span>
+                    <h1>Check the sky anywhere.</h1>
+                    <p class="subtitle">Get current conditions for any U.S. ZIP code with a quick, clean weather snapshot.</p>
                 </div>
-                <div class="temperature-container">
-                    <div class="current-temp" id="currentTemp"></div>
-                    <div class="feels-like">Feels like <span id="feelsLike"></span></div>
+
+                <div class="hero-visual" aria-hidden="true">
+                    <div class="sun"></div>
+                    <div class="cloud cloud-one"></div>
+                    <div class="cloud cloud-two"></div>
+                    <div class="cloud cloud-three"></div>
                 </div>
+            </section>
+
+            <div class="search-section">
+                <label class="sr-only" for="zipInput">ZIP code</label>
+                <div class="search-container">
+                    <input
+                        type="text"
+                        id="zipInput"
+                        placeholder="Enter ZIP code (e.g., 10001)"
+                        maxlength="5"
+                        pattern="[0-9]{5}"
+                        aria-label="ZIP code"
+                    >
+                    <button id="searchBtn">Check weather</button>
+                </div>
+                <div id="errorMessage" class="error-message hidden"></div>
             </div>
 
-            <div class="temp-range">
-                <div class="temp-item">
-                    <span class="label">High</span>
-                    <span id="highTemp" class="value"></span>
-                </div>
-                <div class="temp-item">
-                    <span class="label">Low</span>
-                    <span id="lowTemp" class="value"></span>
-                </div>
+            <div id="loadingSpinner" class="loading-spinner hidden">
+                <div class="spinner"></div>
+                <p>Loading weather data...</p>
             </div>
 
-            <div class="weather-details">
-                <div class="detail-item">
-                    <span class="detail-icon">💧</span>
-                    <div class="detail-info">
-                        <span class="detail-label">Humidity</span>
-                        <span id="humidity" class="detail-value"></span>
+            <div id="weatherDisplay" class="weather-display hidden">
+                <div class="location-header">
+                    <h2 id="cityName"></h2>
+                    <p id="lastUpdated" class="last-updated"></p>
+                </div>
+
+                <div class="weather-main">
+                    <div class="weather-icon-container">
+                        <img id="weatherIcon" src="" alt="Weather icon">
+                        <p id="weatherCondition" class="weather-condition"></p>
+                    </div>
+                    <div class="temperature-container">
+                        <div class="current-temp" id="currentTemp"></div>
+                        <div class="feels-like">Feels like <span id="feelsLike"></span></div>
                     </div>
                 </div>
 
-                <div class="detail-item">
-                    <span class="detail-icon">💨</span>
-                    <div class="detail-info">
-                        <span class="detail-label">Wind</span>
-                        <span id="wind" class="detail-value"></span>
+                <div class="temp-range">
+                    <div class="temp-item">
+                        <span class="label">High</span>
+                        <span id="highTemp" class="value"></span>
+                    </div>
+                    <div class="temp-item">
+                        <span class="label">Low</span>
+                        <span id="lowTemp" class="value"></span>
                     </div>
                 </div>
 
-                <div class="detail-item">
-                    <span class="detail-icon">🌧️</span>
-                    <div class="detail-info">
-                        <span class="detail-label">Precipitation</span>
-                        <span id="precipitation" class="detail-value"></span>
+                <div class="weather-details">
+                    <div class="detail-item">
+                        <span class="detail-icon">💧</span>
+                        <div class="detail-info">
+                            <span class="detail-label">Humidity</span>
+                            <span id="humidity" class="detail-value"></span>
+                        </div>
                     </div>
-                </div>
 
-                <div class="detail-item">
-                    <span class="detail-icon">🌅</span>
-                    <div class="detail-info">
-                        <span class="detail-label">Sunrise</span>
-                        <span id="sunrise" class="detail-value"></span>
+                    <div class="detail-item">
+                        <span class="detail-icon">💨</span>
+                        <div class="detail-info">
+                            <span class="detail-label">Wind</span>
+                            <span id="wind" class="detail-value"></span>
+                        </div>
                     </div>
-                </div>
 
-                <div class="detail-item">
-                    <span class="detail-icon">🌇</span>
-                    <div class="detail-info">
-                        <span class="detail-label">Sunset</span>
-                        <span id="sunset" class="detail-value"></span>
+                    <div class="detail-item">
+                        <span class="detail-icon">🌧️</span>
+                        <div class="detail-info">
+                            <span class="detail-label">Precipitation</span>
+                            <span id="precipitation" class="detail-value"></span>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <span class="detail-icon">🌅</span>
+                        <div class="detail-info">
+                            <span class="detail-label">Sunrise</span>
+                            <span id="sunrise" class="detail-value"></span>
+                        </div>
+                    </div>
+
+                    <div class="detail-item">
+                        <span class="detail-icon">🌇</span>
+                        <div class="detail-info">
+                            <span class="detail-label">Sunset</span>
+                            <span id="sunset" class="detail-value"></span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 
     <script src="script.js"></script>
 </body>
 </html>
+

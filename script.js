@@ -1,5 +1,5 @@
-const API_KEY = 'YOUR_API_KEY_HERE'; // Replace with your OpenWeatherMap API key
-const API_BASE_URL = 'https://api.openweathermap.org/data/2.5';
+const API_BASE_URL = 'https://api.open-meteo.com/v1';
+const GEO_BASE_URL = 'https://geocoding-api.open-meteo.com/v1';
 
 const zipInput = document.getElementById('zipInput');
 const searchBtn = document.getElementById('searchBtn');
@@ -34,20 +34,15 @@ zipInput.addEventListener('input', (e) => {
 
 async function handleSearch() {
     const zip = zipInput.value.trim();
-    
+
     if (!validateZipCode(zip)) {
         showError('Please enter a valid 5-digit U.S. ZIP code');
         return;
     }
 
-    if (API_KEY === 'YOUR_API_KEY_HERE') {
-        showError('Please set your OpenWeatherMap API key in script.js');
-        return;
-    }
-
     hideError();
     showLoading();
-    
+
     try {
         const weatherData = await fetchWeatherByZip(zip);
         displayWeather(weatherData);
@@ -64,30 +59,34 @@ function validateZipCode(zip) {
 
 async function fetchWeatherByZip(zip) {
     try {
-        const currentWeatherUrl = `${API_BASE_URL}/weather?zip=${zip},US&appid=${API_KEY}&units=imperial`;
-        const forecastUrl = `${API_BASE_URL}/forecast?zip=${zip},US&appid=${API_KEY}&units=imperial`;
-        
-        const [currentResponse, forecastResponse] = await Promise.all([
-            fetch(currentWeatherUrl),
-            fetch(forecastUrl)
-        ]);
+        const geocodeUrl = `${GEO_BASE_URL}/search?name=${encodeURIComponent(zip)}&count=1&language=en&format=json`;
+        const geocodeResponse = await fetch(geocodeUrl);
 
-        if (!currentResponse.ok) {
-            if (currentResponse.status === 404) {
-                throw new Error('ZIP code not found. Please enter a valid U.S. ZIP code.');
-            } else if (currentResponse.status === 401) {
-                throw new Error('Invalid API key. Please check your API key.');
-            } else {
-                throw new Error('Unable to retrieve weather data. Please try again.');
-            }
+        if (!geocodeResponse.ok) {
+            throw new Error('Unable to retrieve weather data. Please try again.');
         }
 
-        const currentData = await currentResponse.json();
-        const forecastData = await forecastResponse.json();
+        const geocodeData = await geocodeResponse.json();
+        const location = geocodeData.results && geocodeData.results[0];
+
+        if (!location) {
+            throw new Error('ZIP code not found. Please enter a valid U.S. ZIP code.');
+        }
+
+        const weatherUrl = `${API_BASE_URL}/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto&forecast_days=1`;
+        const weatherResponse = await fetch(weatherUrl);
+
+        if (!weatherResponse.ok) {
+            throw new Error('Unable to retrieve weather data. Please try again.');
+        }
+
+        const weatherData = await weatherResponse.json();
 
         return {
-            current: currentData,
-            forecast: forecastData
+            current: weatherData.current,
+            daily: weatherData.daily,
+            location,
+            timezone: weatherData.timezone
         };
     } catch (error) {
         if (error.message.includes('Failed to fetch')) {
@@ -98,41 +97,112 @@ async function fetchWeatherByZip(zip) {
 }
 
 function displayWeather(data) {
-    const { current, forecast } = data;
-    
-    cityName.textContent = `${current.name}, ${getStateCode(current.sys.country)}`;
-    
+    const { current, daily, location } = data;
+
+    const city = location.name || 'Location';
+    const region = location.admin1 || location.country || 'USA';
+    cityName.textContent = `${city}, ${region}`;
+
     const now = new Date();
     lastUpdated.textContent = `Last updated: ${formatTime(now)}`;
-    
-    const iconCode = current.weather[0].icon;
-    weatherIcon.src = `https://openweathermap.org/img/wn/${iconCode}@4x.png`;
-    weatherIcon.alt = current.weather[0].description;
-    weatherCondition.textContent = capitalizeWords(current.weather[0].description);
-    
-    currentTemp.textContent = `${Math.round(current.main.temp)}°`;
-    feelsLike.textContent = `${Math.round(current.main.feels_like)}°`;
-    highTemp.textContent = `${Math.round(current.main.temp_max)}°`;
-    lowTemp.textContent = `${Math.round(current.main.temp_min)}°`;
-    
-    humidity.textContent = `${current.main.humidity}%`;
-    
-    const windSpeed = Math.round(current.wind.speed);
-    const windDirection = getWindDirection(current.wind.deg);
+
+    const weatherCode = current.weather_code;
+    const description = getWeatherDescription(weatherCode);
+    weatherIcon.src = getWeatherIconDataUri(weatherCode);
+    weatherIcon.alt = description;
+    weatherCondition.textContent = description;
+
+    currentTemp.textContent = `${Math.round(current.temperature_2m)}°`;
+    feelsLike.textContent = `${Math.round(current.apparent_temperature)}°`;
+    highTemp.textContent = `${Math.round(daily.temperature_2m_max[0])}°`;
+    lowTemp.textContent = `${Math.round(daily.temperature_2m_min[0])}°`;
+
+    humidity.textContent = `${Math.round(current.relative_humidity_2m)}%`;
+
+    const windSpeed = Math.round(current.wind_speed_10m);
+    const windDirection = getWindDirection(current.wind_direction_10m);
     wind.textContent = `${windSpeed} mph ${windDirection}`;
-    
-    const pop = forecast.list[0].pop || 0;
-    precipitation.textContent = `${Math.round(pop * 100)}%`;
-    
-    sunrise.textContent = formatTime(new Date(current.sys.sunrise * 1000));
-    sunset.textContent = formatTime(new Date(current.sys.sunset * 1000));
-    
+
+    precipitation.textContent = `${Math.round(current.precipitation || 0)} mm`;
+
+    sunrise.textContent = formatTime(new Date(daily.sunrise[0]));
+    sunset.textContent = formatTime(new Date(daily.sunset[0]));
+
     hideLoading();
     weatherDisplay.classList.remove('hidden');
 }
 
-function getStateCode(country) {
-    return country === 'US' ? 'USA' : country;
+function getWeatherDescription(code) {
+    const descriptions = {
+        0: 'Clear sky',
+        1: 'Mostly clear',
+        2: 'Partly cloudy',
+        3: 'Overcast',
+        45: 'Foggy',
+        48: 'Rime fog',
+        51: 'Light drizzle',
+        53: 'Drizzle',
+        55: 'Heavy drizzle',
+        56: 'Freezing drizzle',
+        57: 'Heavy freezing drizzle',
+        61: 'Light rain',
+        63: 'Rain',
+        65: 'Heavy rain',
+        66: 'Freezing rain',
+        67: 'Heavy freezing rain',
+        71: 'Light snow',
+        73: 'Snow',
+        75: 'Heavy snow',
+        77: 'Snow grains',
+        80: 'Rain showers',
+        81: 'Heavy rain showers',
+        82: 'Violent rain showers',
+        85: 'Snow showers',
+        86: 'Heavy snow showers',
+        95: 'Thunderstorm',
+        96: 'Thunderstorm with hail',
+        99: 'Heavy thunderstorm with hail'
+    };
+
+    return descriptions[code] || 'Weather conditions';
+}
+
+function getWeatherIconDataUri(code) {
+    const emojiMap = {
+        0: '☀️',
+        1: '🌤️',
+        2: '⛅',
+        3: '☁️',
+        45: '🌫️',
+        48: '🌫️',
+        51: '🌦️',
+        53: '🌦️',
+        55: '🌧️',
+        56: '🌧️',
+        57: '🌧️',
+        61: '🌦️',
+        63: '🌧️',
+        65: '🌧️',
+        66: '🌧️',
+        67: '🌧️',
+        71: '🌨️',
+        73: '❄️',
+        75: '❄️',
+        77: '❄️',
+        80: '🌦️',
+        81: '🌧️',
+        82: '🌧️',
+        85: '🌨️',
+        86: '🌨️',
+        95: '⛈️',
+        96: '⛈️',
+        99: '⛈️'
+    };
+
+    const emoji = emojiMap[code] || '🌤️';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128"><rect width="128" height="128" rx="20" fill="#eaf4ff"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-size="64">${emoji}</text></svg>`;
+
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
 function getWindDirection(degrees) {
@@ -142,17 +212,11 @@ function getWindDirection(degrees) {
 }
 
 function formatTime(date) {
-    return date.toLocaleTimeString('en-US', { 
-        hour: 'numeric', 
+    return new Date(date).toLocaleTimeString('en-US', {
+        hour: 'numeric',
         minute: '2-digit',
-        hour12: true 
+        hour12: true
     });
-}
-
-function capitalizeWords(str) {
-    return str.split(' ')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
 }
 
 function showError(message) {
@@ -173,3 +237,4 @@ function showLoading() {
 function hideLoading() {
     loadingSpinner.classList.add('hidden');
 }
+

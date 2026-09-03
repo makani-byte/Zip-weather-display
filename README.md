@@ -1,6 +1,6 @@
 # ZIP Code Weather Display
 
-Simple web app to look up current weather by U.S. ZIP code using OpenWeatherMap.
+Simple web app to look up current weather by U.S. ZIP code using Open-Meteo.
 
 ## Features
 
@@ -10,17 +10,11 @@ Simple web app to look up current weather by U.S. ZIP code using OpenWeatherMap.
 - Humidity, wind, precipitation, sunrise, sunset
 - Loading and error states
 - Responsive layout
+- No API key required
 
 ## Setup
 
-1. Create a free API key at https://openweathermap.org/api.
-2. In script.js, replace:
-
-```javascript
-const API_KEY = 'YOUR_API_KEY_HERE';
-```
-
-with your key.
+No API key is required. The app uses the free Open-Meteo API directly in the browser.
 
 ## Run
 
@@ -41,7 +35,6 @@ Then visit http://localhost:8000.
 
 ## Troubleshooting
 
-- "Please set your OpenWeatherMap API key": API key was not replaced.
-- "Invalid API key": key is incorrect or not activated yet.
 - "ZIP code not found": ZIP is invalid or unsupported.
 - "Network error": connection issue or API outage.
+- Weather not loading: confirm you are using a local server or a browser that allows fetch requests.
