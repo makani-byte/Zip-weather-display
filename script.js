@@ -1,11 +1,15 @@
 const API_BASE_URL = 'https://api.open-meteo.com/v1';
 const GEO_BASE_URL = 'https://geocoding-api.open-meteo.com/v1';
+let currentUnit = 'F';
+let latestWeatherData = null;
+let latestZip = null;
 
 const zipInput = document.getElementById('zipInput');
 const searchBtn = document.getElementById('searchBtn');
 const errorMessage = document.getElementById('errorMessage');
 const loadingSpinner = document.getElementById('loadingSpinner');
 const weatherDisplay = document.getElementById('weatherDisplay');
+const unitButtons = document.querySelectorAll('.unit-btn');
 
 const cityName = document.getElementById('cityName');
 const lastUpdated = document.getElementById('lastUpdated');
@@ -32,6 +36,44 @@ zipInput.addEventListener('input', (e) => {
     e.target.value = e.target.value.replace(/[^0-9]/g, '');
 });
 
+unitButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+        setTemperatureUnit(button.dataset.unit);
+    });
+});
+
+function setTemperatureUnit(unit) {
+    currentUnit = unit;
+
+    unitButtons.forEach((button) => {
+        const isActive = button.dataset.unit === unit;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-pressed', String(isActive));
+    });
+
+    if (latestZip) {
+        refreshWeatherForCurrentZip();
+    }
+}
+
+async function refreshWeatherForCurrentZip() {
+    if (!latestZip) {
+        return;
+    }
+
+    hideError();
+    showLoading();
+
+    try {
+        const weatherData = await fetchWeatherByZip(latestZip);
+        latestWeatherData = weatherData;
+        displayWeather(weatherData);
+    } catch (error) {
+        showError(error.message);
+        hideLoading();
+    }
+}
+
 async function handleSearch() {
     const zip = zipInput.value.trim();
 
@@ -45,6 +87,8 @@ async function handleSearch() {
 
     try {
         const weatherData = await fetchWeatherByZip(zip);
+        latestZip = zip;
+        latestWeatherData = weatherData;
         displayWeather(weatherData);
     } catch (error) {
         showError(error.message);
@@ -73,7 +117,9 @@ async function fetchWeatherByZip(zip) {
             throw new Error('ZIP code not found. Please enter a valid U.S. ZIP code.');
         }
 
-        const weatherUrl = `${API_BASE_URL}/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto&forecast_days=1`;
+        const temperatureUnit = currentUnit === 'F' ? 'fahrenheit' : 'celsius';
+        const windSpeedUnit = currentUnit === 'F' ? 'mph' : 'kmh';
+        const weatherUrl = `${API_BASE_URL}/forecast?latitude=${location.latitude}&longitude=${location.longitude}&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_direction_10m&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=auto&forecast_days=1&temperature_unit=${temperatureUnit}&wind_speed_unit=${windSpeedUnit}`;
         const weatherResponse = await fetch(weatherUrl);
 
         if (!weatherResponse.ok) {
@@ -86,7 +132,8 @@ async function fetchWeatherByZip(zip) {
             current: weatherData.current,
             daily: weatherData.daily,
             location,
-            timezone: weatherData.timezone
+            timezone: weatherData.timezone,
+            unit: currentUnit
         };
     } catch (error) {
         if (error.message.includes('Failed to fetch')) {
@@ -98,6 +145,8 @@ async function fetchWeatherByZip(zip) {
 
 function displayWeather(data) {
     const { current, daily, location } = data;
+    const activeUnit = data.unit || currentUnit;
+    latestWeatherData = data;
 
     const city = location.name || 'Location';
     const region = location.admin1 || location.country || 'USA';
@@ -112,16 +161,17 @@ function displayWeather(data) {
     weatherIcon.alt = description;
     weatherCondition.textContent = description;
 
-    currentTemp.textContent = `${Math.round(current.temperature_2m)}°`;
-    feelsLike.textContent = `${Math.round(current.apparent_temperature)}°`;
-    highTemp.textContent = `${Math.round(daily.temperature_2m_max[0])}°`;
-    lowTemp.textContent = `${Math.round(daily.temperature_2m_min[0])}°`;
+    currentTemp.textContent = `${Math.round(current.temperature_2m)}°${activeUnit}`;
+    feelsLike.textContent = `${Math.round(current.apparent_temperature)}°${activeUnit}`;
+    highTemp.textContent = `${Math.round(daily.temperature_2m_max[0])}°${activeUnit}`;
+    lowTemp.textContent = `${Math.round(daily.temperature_2m_min[0])}°${activeUnit}`;
 
     humidity.textContent = `${Math.round(current.relative_humidity_2m)}%`;
 
     const windSpeed = Math.round(current.wind_speed_10m);
     const windDirection = getWindDirection(current.wind_direction_10m);
-    wind.textContent = `${windSpeed} mph ${windDirection}`;
+    const windUnit = activeUnit === 'F' ? 'mph' : 'km/h';
+    wind.textContent = `${windSpeed} ${windUnit} ${windDirection}`;
 
     precipitation.textContent = `${Math.round(current.precipitation || 0)} mm`;
 
