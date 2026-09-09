@@ -46,6 +46,33 @@
                     <button type="button" class="unit-btn" data-unit="C">°C</button>
                 </div>
 
+                <section class="color-controls" aria-label="Theme color settings">
+                    <p class="color-controls-title">Theme colors</p>
+                    <div class="color-grid">
+                        <label class="color-control-item" for="bgStartColor">
+                            Background start
+                            <input type="color" id="bgStartColor" class="theme-color-input" data-theme-var="--bg-start" aria-label="Background start color">
+                        </label>
+                        <label class="color-control-item" for="bgMidColor">
+                            Background middle
+                            <input type="color" id="bgMidColor" class="theme-color-input" data-theme-var="--bg-mid" aria-label="Background middle color">
+                        </label>
+                        <label class="color-control-item" for="bgEndColor">
+                            Background end
+                            <input type="color" id="bgEndColor" class="theme-color-input" data-theme-var="--bg-end" aria-label="Background end color">
+                        </label>
+                        <label class="color-control-item" for="accentColor">
+                            Accent
+                            <input type="color" id="accentColor" class="theme-color-input" data-theme-var="--accent" aria-label="Accent color">
+                        </label>
+                        <label class="color-control-item" for="accentSecondaryColor">
+                            Accent secondary
+                            <input type="color" id="accentSecondaryColor" class="theme-color-input" data-theme-var="--accent-2" aria-label="Accent secondary color">
+                        </label>
+                    </div>
+                    <button type="button" id="resetColorsBtn" class="reset-colors-btn">Reset colors</button>
+                </section>
+
                 <div id="errorMessage" class="error-message hidden"></div>
             </div>
 

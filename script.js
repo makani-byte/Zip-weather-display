@@ -10,6 +10,17 @@ const errorMessage = document.getElementById('errorMessage');
 const loadingSpinner = document.getElementById('loadingSpinner');
 const weatherDisplay = document.getElementById('weatherDisplay');
 const unitButtons = document.querySelectorAll('.unit-btn');
+const colorInputs = document.querySelectorAll('.theme-color-input');
+const resetColorsBtn = document.getElementById('resetColorsBtn');
+
+const THEME_STORAGE_KEY = 'zipWeatherThemeColors';
+const defaultThemeColors = {
+    '--bg-start': '#0f172a',
+    '--bg-mid': '#1d4ed8',
+    '--bg-end': '#7c3aed',
+    '--accent': '#fbbf24',
+    '--accent-2': '#60a5fa'
+};
 
 const cityName = document.getElementById('cityName');
 const lastUpdated = document.getElementById('lastUpdated');
@@ -41,6 +52,131 @@ unitButtons.forEach((button) => {
         setTemperatureUnit(button.dataset.unit);
     });
 });
+
+colorInputs.forEach((input) => {
+    input.addEventListener('input', handleThemeColorChange);
+});
+
+if (resetColorsBtn) {
+    resetColorsBtn.addEventListener('click', resetThemeColors);
+}
+
+initializeThemeColors();
+
+function initializeThemeColors() {
+    const savedColors = getSavedThemeColors();
+    const colorsToApply = savedColors || defaultThemeColors;
+
+    applyThemeColors(colorsToApply);
+    syncColorInputsFromTheme();
+}
+
+function handleThemeColorChange(event) {
+    const input = event.target;
+    const themeVar = input.dataset.themeVar;
+
+    if (!themeVar) {
+        return;
+    }
+
+    document.documentElement.style.setProperty(themeVar, input.value);
+    saveThemeColors(getCurrentThemeColors());
+}
+
+function resetThemeColors() {
+    applyThemeColors(defaultThemeColors);
+    syncColorInputsFromTheme();
+    localStorage.removeItem(THEME_STORAGE_KEY);
+}
+
+function applyThemeColors(themeColors) {
+    Object.entries(themeColors).forEach(([cssVariable, color]) => {
+        document.documentElement.style.setProperty(cssVariable, color);
+    });
+}
+
+function getCurrentThemeColors() {
+    const computedStyle = getComputedStyle(document.documentElement);
+    const currentColors = {};
+
+    Object.keys(defaultThemeColors).forEach((cssVariable) => {
+        const colorValue = computedStyle.getPropertyValue(cssVariable).trim();
+        currentColors[cssVariable] = normalizeColorToHex(colorValue) || defaultThemeColors[cssVariable];
+    });
+
+    return currentColors;
+}
+
+function saveThemeColors(themeColors) {
+    localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(themeColors));
+}
+
+function getSavedThemeColors() {
+    try {
+        const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+
+        if (!savedTheme) {
+            return null;
+        }
+
+        const parsedTheme = JSON.parse(savedTheme);
+        const sanitizedTheme = {};
+
+        Object.keys(defaultThemeColors).forEach((cssVariable) => {
+            const value = parsedTheme[cssVariable];
+
+            if (isValidHexColor(value)) {
+                sanitizedTheme[cssVariable] = value;
+            }
+        });
+
+        return Object.keys(sanitizedTheme).length ? sanitizedTheme : null;
+    } catch {
+        return null;
+    }
+}
+
+function syncColorInputsFromTheme() {
+    const computedStyle = getComputedStyle(document.documentElement);
+
+    colorInputs.forEach((input) => {
+        const themeVar = input.dataset.themeVar;
+        const colorValue = computedStyle.getPropertyValue(themeVar).trim();
+        const normalized = normalizeColorToHex(colorValue);
+
+        if (normalized) {
+            input.value = normalized;
+        }
+    });
+}
+
+function isValidHexColor(value) {
+    return typeof value === 'string' && /^#([A-Fa-f0-9]{6})$/.test(value);
+}
+
+function normalizeColorToHex(colorValue) {
+    if (!colorValue) {
+        return null;
+    }
+
+    if (isValidHexColor(colorValue)) {
+        return colorValue.toLowerCase();
+    }
+
+    const rgbMatch = colorValue.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+
+    if (!rgbMatch) {
+        return null;
+    }
+
+    const [r, g, b] = rgbMatch.slice(1, 4).map((channel) => Number(channel));
+
+    if ([r, g, b].some((channel) => Number.isNaN(channel))) {
+        return null;
+    }
+
+    return `#${[r, g, b].map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
+}
 
 function setTemperatureUnit(unit) {
     currentUnit = unit;
