@@ -347,7 +347,12 @@ function getWeatherDescription(code) {
         86: 'Heavy snow showers',
         95: 'Thunderstorm',
         96: 'Thunderstorm with hail',
-        99: 'Heavy thunderstorm with hail'
+        99: 'Heavy thunderstorm with hail',
+        100: 'Hurricane',
+        101: 'Tornado',
+        102: 'Tropical storm',
+        103: 'Cyclone',
+        104: 'Severe storm',
     };
 
     return descriptions[code] || 'Weather conditions';
